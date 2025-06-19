@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Use zero based indexes internally (tracking monitors, workspace,s etc) but one-based when showing something to the user since "Monitor 0" can be confusing.
