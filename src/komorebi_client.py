@@ -8,10 +8,17 @@ workspace and monitor state information.
 import json
 import logging
 import subprocess
+import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# Windows-specific subprocess flags
+if sys.platform == "win32":
+    CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW
+else:
+    CREATE_NO_WINDOW = 0
 
 
 @dataclass
@@ -201,6 +208,7 @@ class KomorebiClient:
                 capture_output=True,
                 text=True,
                 timeout=5.0,  # 5 second timeout
+                creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
 
             if result.returncode == 0:
@@ -277,6 +285,7 @@ class KomorebiClient:
                 capture_output=True,
                 text=True,
                 timeout=5.0,  # 5 second timeout
+                creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
 
             if result.returncode == 0:
@@ -351,6 +360,7 @@ class KomorebiClient:
                 capture_output=True,
                 text=True,
                 timeout=5.0,
+                creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
 
             if result.returncode != 0:
@@ -450,6 +460,7 @@ class KomorebiClient:
                 capture_output=True,
                 text=True,
                 timeout=5.0,
+                creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
 
             if result.returncode != 0:
@@ -539,6 +550,7 @@ class KomorebiClient:
                 capture_output=True,
                 text=True,
                 timeout=5.0,
+                creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
 
             if result.returncode != 0:
@@ -612,6 +624,7 @@ class KomorebiClient:
                 capture_output=True,
                 text=True,
                 timeout=5.0,
+                creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
 
             if result.returncode != 0:
