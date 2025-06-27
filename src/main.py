@@ -8,6 +8,7 @@ Orchestrates all components and provides the main application loop.
 import logging
 import sys
 import time
+from typing import Optional
 
 # Add these imports for fullscreen detection
 import win32gui
@@ -37,7 +38,7 @@ class KomorebiIndicatorApp:
     """Main application class for the Komorebi Floating Workspace Indicator."""
 
     def __init__(
-        self, template: str = None, show_monitor: bool = False, show_name: bool = False
+        self, template: Optional[str] = None, show_monitor: bool = False, show_name: bool = False
     ):
         """
         Initialize the application.
@@ -260,7 +261,7 @@ class KomorebiIndicatorApp:
             self.stop()
 
 
-def main(template: str = None, show_monitor: bool = False, show_name: bool = False):
+def main(template: Optional[str] = None, show_monitor: bool = False, show_name: bool = False):
     """
     Main entry point.
 
