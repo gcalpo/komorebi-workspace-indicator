@@ -79,6 +79,23 @@ class WorkspaceIndicator(QWidget):
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(0)
 
+        # Set styling for the main widget to remove any borders
+        self.setStyleSheet("""
+            QWidget {
+                background: transparent;
+                border: none;
+            }
+            QMenu {
+                background-color: #222;
+                color: #fff;
+                border-radius: 6px;
+                border: 1px solid #444;
+            }
+            QMenu::item:selected {
+                background-color: #444;
+            }
+        """)
+
         # Monitor and workspace label
         initial_text = self._format_display_text(self.current_workspace, None)
         self.workspace_label = QLabel(initial_text)
