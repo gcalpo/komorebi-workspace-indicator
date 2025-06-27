@@ -11,6 +11,8 @@ import sys
 import subprocess
 import platform
 from pathlib import Path
+import shutil
+import time
 
 def run_command(cmd, description):
     """Run a command and handle errors."""
@@ -24,6 +26,30 @@ def run_command(cmd, description):
         print(f"   Command: {cmd}")
         print(f"   Error: {e.stderr}")
         return False
+
+def safe_remove_directory(path):
+    """Safely remove a directory with retry logic for Windows."""
+    if not Path(path).exists():
+        return True
+    
+    print(f"🧹 Removing previous {path} directory...")
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            shutil.rmtree(path)
+            print(f"✅ Successfully removed {path}")
+            return True
+        except PermissionError as e:
+            if attempt < max_retries - 1:
+                print(f"⚠️  Permission error removing {path}, retrying in 2 seconds... (attempt {attempt + 1}/{max_retries})")
+                time.sleep(2)
+            else:
+                print(f"❌ Failed to remove {path} after {max_retries} attempts: {e}")
+                print(f"   Please close any applications that might be using files in {path}")
+                return False
+        except Exception as e:
+            print(f"❌ Error removing {path}: {e}")
+            return False
 
 def main():
     """Main build function."""
@@ -48,16 +74,21 @@ def main():
     if not run_command(f"{pip_cmd} install pyinstaller", "Installing PyInstaller"):
         return 1
     
-    # Create dist directory
-    dist_dir = Path("dist")
-    dist_dir.mkdir(exist_ok=True)
+    # Clean previous build and dist directories with retry logic
+    for folder in ["build", "dist"]:
+        if not safe_remove_directory(folder):
+            print(f"⚠️  Continuing build despite failure to remove {folder}...")
     
-    # Build the executable using spec file
+    # Build the executable using spec file or default command with hidden imports
+    pyinstaller_cmd = (
+        f"{sys.executable} -m PyInstaller --windowed run.py --name komorebi-indicator "
+        "--hidden-import=PyQt6 --hidden-import=PyQt6.QtWidgets --hidden-import=PyQt6.QtGui --hidden-import=PyQt6.QtCore"
+    )
     if Path("komorebi-indicator.spec").exists():
         if not run_command(f"{sys.executable} -m PyInstaller komorebi-indicator.spec", "Building executable"):
             return 1
     else:
-        if not run_command(f"{sys.executable} -m PyInstaller --onefile --windowed run.py --name komorebi-indicator", "Building executable"):
+        if not run_command(pyinstaller_cmd, "Building executable"):
             return 1
     
     # Check if build was successful
