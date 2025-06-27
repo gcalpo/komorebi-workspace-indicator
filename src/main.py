@@ -9,6 +9,13 @@ import logging
 import sys
 import time
 
+# Add these imports for fullscreen detection
+import win32gui
+import win32con
+import win32api
+import win32process
+import ctypes
+
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
@@ -49,7 +56,7 @@ class KomorebiIndicatorApp:
         self.monitor_manager = MonitorManager(self.komorebi_client)
         self.window_manager = FloatingWindowManager(
             self.monitor_manager,
-            template=template,
+            template=template if template is not None else "",
             show_monitor=show_monitor,
             show_name=show_name,
             komorebi_client=self.komorebi_client,
@@ -148,12 +155,49 @@ class KomorebiIndicatorApp:
 
         logger.info("Application stopped")
 
+    def _is_focused_window_fullscreen(self, monitor_rects=None):
+        """
+        Check if the currently focused window is running fullscreen on any monitor.
+        Args:
+            monitor_rects: Optional list of monitor rects (left, top, right, bottom)
+        Returns:
+            True if a fullscreen window is detected, False otherwise
+        """
+        try:
+            hwnd = win32gui.GetForegroundWindow()
+            if hwnd == 0:
+                return False
+            # Ignore our own indicator windows
+            title = win32gui.GetWindowText(hwnd)
+            if "KomorebiWorkspaceIndicator" in title:
+                return False
+            rect = win32gui.GetWindowRect(hwnd)
+            l, t, r, b = rect
+            # Get all monitor rects if not provided
+            if monitor_rects is None:
+                monitor_rects = [m.rect for m in self.monitor_manager.get_monitors()]
+            for mon_l, mon_t, mon_r, mon_b in monitor_rects:
+                # Allow a small tolerance for borders
+                if abs(l - mon_l) <= 2 and abs(t - mon_t) <= 2 and abs(r - mon_r) <= 2 and abs(b - mon_b) <= 2:
+                    return True
+            return False
+        except Exception as e:
+            logger.error(f"Error checking fullscreen window: {e}")
+            return False
+
     def _poll_workspace_state(self):
-        """Poll for workspace state changes."""
+        """Poll for workspace state changes and hide indicator if fullscreen app is focused."""
         if not self.is_running:
             return
 
         try:
+            # Hide indicators if fullscreen app is focused
+            if self._is_focused_window_fullscreen():
+                self.window_manager.hide_all_indicators()
+                return
+            else:
+                self.window_manager.show_all_indicators()
+
             # Get workspace state for all monitors
             all_states = self.komorebi_client.get_all_monitors_workspace_state()
 
@@ -227,7 +271,9 @@ def main(template: str = None, show_monitor: bool = False, show_name: bool = Fal
     """
     try:
         app = KomorebiIndicatorApp(
-            template=template, show_monitor=show_monitor, show_name=show_name
+            template=template if template is not None else "",
+            show_monitor=show_monitor,
+            show_name=show_name
         )
         return app.run()
     except Exception as e:
