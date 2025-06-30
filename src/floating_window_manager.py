@@ -33,6 +33,7 @@ class WorkspaceIndicator(QWidget):
         show_monitor: bool = False,
         show_name: bool = False,
         komorebi_client=None,
+        window_manager=None,
     ):
         """
         Initialize the workspace indicator.
@@ -48,6 +49,7 @@ class WorkspaceIndicator(QWidget):
             show_monitor: Whether to show monitor index (overrides template)
             show_name: Whether to show workspace name (overrides template)
             komorebi_client: KomorebiClient instance for workspace switching
+            window_manager: Reference to FloatingWindowManager for refresh operations
         """
         super().__init__(parent)
         self.monitor_info = monitor_info
@@ -55,6 +57,7 @@ class WorkspaceIndicator(QWidget):
         self.current_workspace = 0  # 0-based internally
         self.current_workspace_name = None
         self.komorebi_client = komorebi_client
+        self.window_manager = window_manager  # Store reference to window manager
 
         # Dragging state
         self.user_moved = False  # Track if user has manually moved the window
@@ -78,6 +81,23 @@ class WorkspaceIndicator(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(0)
+
+        # Set styling for the main widget to remove any borders
+        self.setStyleSheet("""
+            QWidget {
+                background: transparent;
+                border: none;
+            }
+            QMenu {
+                background-color: #222;
+                color: #fff;
+                border-radius: 6px;
+                border: 1px solid #444;
+            }
+            QMenu::item:selected {
+                background-color: #444;
+            }
+        """)
 
         # Monitor and workspace label
         initial_text = self._format_display_text(self.current_workspace, None)
@@ -275,6 +295,11 @@ class WorkspaceIndicator(QWidget):
         reset_action = menu.addAction("Reset Position")
         reset_action.triggered.connect(self.reset_position)
 
+        # Add Refresh Monitors option
+        if self.window_manager:
+            refresh_action = menu.addAction("Refresh Monitors")
+            refresh_action.triggered.connect(self._refresh_monitors)
+
         menu.addSeparator()
 
         # Add Quit option
@@ -283,6 +308,12 @@ class WorkspaceIndicator(QWidget):
 
         # Show the menu at the cursor position
         menu.exec(event.globalPos())
+
+    def _refresh_monitors(self):
+        """Refresh monitor configuration."""
+        if self.window_manager:
+            logger.info("Manual monitor refresh requested")
+            self.window_manager.refresh_monitors()
 
     def _switch_to_workspace(self, workspace_index: int):
         """Switch to the specified workspace."""
@@ -360,6 +391,7 @@ class FloatingWindowManager:
                 show_monitor=self.show_monitor,
                 show_name=self.show_name,
                 komorebi_client=self.komorebi_client,
+                window_manager=self,
             )
             self.indicators[monitor.id] = indicator  # Use Komorebi monitor ID as key
             logger.info(f"Created indicator for monitor {monitor.id}")
@@ -404,6 +436,11 @@ class FloatingWindowManager:
 
     def refresh_monitors(self):
         """Refresh indicators when monitor configuration changes."""
+        logger.info("Refreshing monitor configuration...")
+        
+        # First refresh the monitor manager to get updated monitor information
+        self.monitor_manager.refresh()
+        
         # Hide existing indicators
         self.hide_all_indicators()
 
