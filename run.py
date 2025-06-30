@@ -30,6 +30,12 @@ Available placeholders:
   {monitor}   - Monitor index (1-based)
   {workspace} - Workspace number (1-based)
   {name}      - Workspace name (if available)
+
+Logging Examples:
+  --log-level info                           # Enable info level logging
+  --log-level debug                          # Enable debug level logging
+  --verbose                                  # Shortcut for info level
+  --debug                                    # Shortcut for debug level
         """
     )
     
@@ -53,8 +59,42 @@ Available placeholders:
         help="Show workspace name (overrides template if not specified)"
     )
     
+    # Logging level arguments
+    log_group = parser.add_mutually_exclusive_group()
+    log_group.add_argument(
+        '--log-level',
+        type=str,
+        choices=['debug', 'info', 'warning', 'error', 'critical'],
+        help="Set logging level (default: no logging)"
+    )
+    log_group.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help="Enable verbose (info level) logging"
+    )
+    log_group.add_argument(
+        '--debug',
+        action='store_true', 
+        help="Enable debug level logging"
+    )
+    
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_arguments()
-    sys.exit(main(template=args.template, show_monitor=args.show_monitor, show_name=args.show_name)) 
+    
+    # Determine logging level
+    log_level = None  # Default to no logging
+    if args.debug:
+        log_level = 'debug'
+    elif args.verbose:
+        log_level = 'info'
+    elif args.log_level:
+        log_level = args.log_level
+    
+    sys.exit(main(
+        template=args.template, 
+        show_monitor=args.show_monitor, 
+        show_name=args.show_name,
+        log_level=log_level
+    )) 

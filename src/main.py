@@ -16,12 +16,36 @@ from .floating_window_manager import FloatingWindowManager
 from .komorebi_client import KomorebiClient, WorkspaceState
 from .monitor_manager import MonitorManager
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,  # Changed from DEBUG to INFO
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(), logging.FileHandler("komorebi_indicator.log")],
-)
+
+def configure_logging(log_level: str = None):
+    """
+    Configure logging based on the specified level.
+    
+    Args:
+        log_level: Logging level ('debug', 'info', 'warning', 'error', 'critical')
+                  If None, logging is effectively disabled (level 100)
+    """
+    if log_level is None:
+        # Set to level 100 to effectively disable all logging
+        level = 100
+    else:
+        level_map = {
+            'debug': logging.DEBUG,
+            'info': logging.INFO,
+            'warning': logging.WARNING,
+            'error': logging.ERROR,
+            'critical': logging.CRITICAL
+        }
+        level = level_map.get(log_level.lower(), 100)
+    
+    # Configure logging
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(), logging.FileHandler("komorebi_indicator.log")],
+        force=True  # Reconfigure existing loggers
+    )
+
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +240,7 @@ class KomorebiIndicatorApp:
             self.stop()
 
 
-def main(template: str = None, show_monitor: bool = False, show_name: bool = False):
+def main(template: str = None, show_monitor: bool = False, show_name: bool = False, log_level: str = None):
     """
     Main entry point.
 
@@ -224,7 +248,12 @@ def main(template: str = None, show_monitor: bool = False, show_name: bool = Fal
         template: Custom template string for workspace indicators
         show_monitor: Whether to show monitor indices
         show_name: Whether to show workspace names
+        log_level: Logging level ('debug', 'info', 'warning', 'error', 'critical')
+                  If None, logging is effectively disabled
     """
+    # Configure logging first
+    configure_logging(log_level)
+    
     try:
         app = KomorebiIndicatorApp(
             template=template, show_monitor=show_monitor, show_name=show_name
