@@ -76,6 +76,9 @@ The application supports various command-line arguments for customization:
 # Basic usage
 py run.py
 
+# Run in foreground (attach to terminal; see errors and keep prompt until app exits)
+py run.py --foreground
+
 # Custom template
 py run.py --template "M{monitor} W{workspace}"
 

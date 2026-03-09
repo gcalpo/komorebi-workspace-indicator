@@ -124,15 +124,22 @@ Process Management Examples:
         action='store_true',
         help=argparse.SUPPRESS  # Hide from help output
     )
+    parser.add_argument(
+        '--foreground', '-f',
+        action='store_true',
+        help="Run in foreground (attach to terminal); do not start as background service"
+    )
     
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_arguments()
     
-    # Set detached flag if running in detached mode
+    # Set detached flag if running in detached mode or user requested foreground
     if args.detached:
         sys._komorebi_detached = True
+    if args.foreground:
+        sys._komorebi_detached = True  # Run in current process, don't spawn background
     
     # Handle process management commands
     if args.list_processes:

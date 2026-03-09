@@ -207,6 +207,8 @@ class KomorebiClient:
                 [self.komorebic_path, "query", query_type],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=5.0,  # 5 second timeout
                 creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
@@ -284,6 +286,8 @@ class KomorebiClient:
                 [self.komorebic_path, "monitor-information"],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=5.0,  # 5 second timeout
                 creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
@@ -359,6 +363,8 @@ class KomorebiClient:
                 [self.komorebic_path, "state"],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=5.0,
                 creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
@@ -459,6 +465,8 @@ class KomorebiClient:
                 [self.komorebic_path, "state"],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=5.0,
                 creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
@@ -549,6 +557,8 @@ class KomorebiClient:
                 [self.komorebic_path, "state"],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=5.0,
                 creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
@@ -623,6 +633,8 @@ class KomorebiClient:
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=5.0,
                 creationflags=CREATE_NO_WINDOW if sys.platform == "win32" else 0,
             )
