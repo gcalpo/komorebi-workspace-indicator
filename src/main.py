@@ -65,7 +65,7 @@ class KomorebiIndicatorApp:
     """Main application class for the Komorebi Floating Workspace Indicator."""
 
     def __init__(
-        self, template: Optional[str] = None, show_monitor: bool = False, show_name: bool = False
+        self, template: Optional[str] = None, show_monitor: bool = False, show_name: bool = False, show_layout: bool = False
     ):
         """
         Initialize the application.
@@ -74,6 +74,7 @@ class KomorebiIndicatorApp:
             template: Custom template string for workspace indicators
             show_monitor: Whether to show monitor indices
             show_name: Whether to show workspace names
+            show_layout: Whether to show workspace layout
         """
         self.app = QApplication(sys.argv)
         self.app.setApplicationName("Komorebi Floating Workspace Indicator")
@@ -87,6 +88,7 @@ class KomorebiIndicatorApp:
             template=template if template is not None else "",
             show_monitor=show_monitor,
             show_name=show_name,
+            show_layout=show_layout,
             komorebi_client=self.komorebi_client,
         )
 
@@ -95,9 +97,9 @@ class KomorebiIndicatorApp:
         self.poll_timer.timeout.connect(self._poll_workspace_state)
         self.poll_interval = 1000  # 1 second
 
-        # State tracking - track workspace state for each monitor by Komorebi monitor ID
-        self.monitor_workspace_states = {}  # monitor_id -> workspace_index
-        self.last_update_time = {}  # monitor_id -> timestamp to prevent rapid updates
+        # State tracking - track (workspace_index, workspace_name, workspace_layout) per monitor
+        self.monitor_workspace_states = {}  # monitor_id -> (workspace_index, workspace_name, workspace_layout)
+        self.last_update_time = {}  # monitor_id -> timestamp (for log throttling only)
         self.is_running = False
 
         logger.info("Komorebi Floating Workspace Indicator initialized")
@@ -149,7 +151,9 @@ class KomorebiIndicatorApp:
             if all_states:
                 for state in all_states:
                     self.monitor_workspace_states[state.monitor_index] = (
-                        state.workspace_index
+                        state.workspace_index,
+                        state.workspace_name,
+                        state.workspace_layout,
                     )
                     logger.info(
                         f"Initialized monitor {state.monitor_index} with workspace {state.workspace_index}"
@@ -162,7 +166,9 @@ class KomorebiIndicatorApp:
                 if current_state:
                     for monitor in self.monitor_manager.get_monitors():
                         self.monitor_workspace_states[monitor.id] = (
-                            current_state.workspace_index
+                            current_state.workspace_index,
+                            getattr(current_state, "workspace_name", None),
+                            getattr(current_state, "workspace_layout", None),
                         )
                         logger.info(
                             f"Initialized monitor {monitor.id} with workspace {current_state.workspace_index}"
@@ -235,37 +241,61 @@ class KomorebiIndicatorApp:
 
             current_time = time.time()
 
-            # Update each monitor's state
+            # Always push current state to indicators every poll so every displayed
+            # property (workspace, name, layout) updates when it changes.
+            for current_state in all_states:
+                self.window_manager.update_workspace_state(current_state)
+
+                # Log only when something changed (throttle log spam)
+                monitor_id = current_state.monitor_index
+                last_update = self.last_update_time.get(monitor_id, 0)
+                if current_time - last_update >= 0.5 and self._has_state_changed(
+                    current_state
+                ):
+                    logger.info(
+                        f"Workspace changed: Monitor {monitor_id} -> "
+                        f"W{current_state.workspace_index} "
+                        f"name={current_state.workspace_name!r} layout={current_state.workspace_layout!r}"
+                    )
+                    self.monitor_workspace_states[monitor_id] = (
+                        current_state.workspace_index,
+                        current_state.workspace_name,
+                        current_state.workspace_layout,
+                    )
+                    self.last_update_time[monitor_id] = current_time
+
+            # Ensure we have stored state for all monitors (for next poll's change detection)
             for current_state in all_states:
                 monitor_id = current_state.monitor_index
-
-                # Check if enough time has passed since last update (prevent rapid firing)
-                last_update = self.last_update_time.get(monitor_id, 0)
-                if current_time - last_update < 0.5:  # Minimum 500ms between updates
-                    continue
-
-                # Only log and update if the state has actually changed
-                if self._has_state_changed(current_state):
-                    logger.info(
-                        f"Workspace changed: Monitor {monitor_id} -> Workspace {current_state.workspace_index}"
+                if monitor_id not in self.monitor_workspace_states:
+                    self.monitor_workspace_states[monitor_id] = (
+                        current_state.workspace_index,
+                        current_state.workspace_name,
+                        current_state.workspace_layout,
                     )
-
-                    # Update the floating window for this monitor
-                    self.window_manager.update_workspace_state(current_state)
-                    
-                    # Update last known state and timestamp
-                    self.monitor_workspace_states[monitor_id] = current_state.workspace_index
-                    self.last_update_time[monitor_id] = current_time
 
         except Exception as e:
             logger.error(f"Error during workspace polling: {e}")
 
     def _has_state_changed(self, current_state: WorkspaceState) -> bool:
+        """True if any displayed property (workspace, name, layout) changed."""
         monitor_id = current_state.monitor_index
         if monitor_id not in self.monitor_workspace_states:
             return True
+        prev = self.monitor_workspace_states[monitor_id]
+        # Unpack: (workspace_index, workspace_name, workspace_layout) or legacy formats
+        if isinstance(prev, tuple):
+            prev_idx = prev[0] if len(prev) > 0 else None
+            prev_name = prev[1] if len(prev) > 2 else None  # 3-tuple: name at index 1
+            prev_layout = prev[2] if len(prev) > 2 else (prev[1] if len(prev) == 2 else None)
+            if len(prev) == 2:
+                prev_name = None  # (idx, layout) legacy
+        else:
+            prev_idx, prev_name, prev_layout = prev, None, None
         return (
-            self.monitor_workspace_states[monitor_id] != current_state.workspace_index
+            prev_idx != current_state.workspace_index
+            or prev_name != current_state.workspace_name
+            or prev_layout != current_state.workspace_layout
         )
 
     def run(self):
@@ -288,7 +318,7 @@ class KomorebiIndicatorApp:
             self.stop()
 
 
-def main(template: Optional[str] = None, show_monitor: bool = False, show_name: bool = False, log_level: str = None):
+def main(template: Optional[str] = None, show_monitor: bool = False, show_name: bool = False, show_layout: bool = False, log_level: str = None):
     """
     Main entry point.
 
@@ -296,6 +326,7 @@ def main(template: Optional[str] = None, show_monitor: bool = False, show_name: 
         template: Custom template string for workspace indicators
         show_monitor: Whether to show monitor indices
         show_name: Whether to show workspace names
+        show_layout: Whether to show workspace layout
         log_level: Logging level ('debug', 'info', 'warning', 'error', 'critical')
                   If None, logging is effectively disabled
     """
@@ -306,7 +337,8 @@ def main(template: Optional[str] = None, show_monitor: bool = False, show_name: 
         app = KomorebiIndicatorApp(
             template=template if template is not None else "",
             show_monitor=show_monitor,
-            show_name=show_name
+            show_name=show_name,
+            show_layout=show_layout,
         )
         return app.run()
     except Exception as e:

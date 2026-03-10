@@ -32,6 +32,7 @@ class WorkspaceIndicator(QWidget):
         template: str = None,
         show_monitor: bool = False,
         show_name: bool = False,
+        show_layout: bool = False,
         komorebi_client=None,
         window_manager=None,
     ):
@@ -46,8 +47,10 @@ class WorkspaceIndicator(QWidget):
                      {monitor} - Monitor index (1-based for display)
                      {workspace} - Workspace number (1-based for display)
                      {name} - Workspace name
+                     {layout} - Current workspace layout (e.g. VerticalStack)
             show_monitor: Whether to show monitor index (overrides template)
             show_name: Whether to show workspace name (overrides template)
+            show_layout: Whether to show workspace layout (overrides template)
             komorebi_client: KomorebiClient instance for workspace switching
             window_manager: Reference to FloatingWindowManager for refresh operations
         """
@@ -56,6 +59,8 @@ class WorkspaceIndicator(QWidget):
         self.monitor_id = monitor_id  # Store the actual Komorebi monitor ID
         self.current_workspace = 0  # 0-based internally
         self.current_workspace_name = None
+        self.current_workspace_layout = None
+        self.show_layout = show_layout
         self.komorebi_client = komorebi_client
         self.window_manager = window_manager  # Store reference to window manager
 
@@ -100,7 +105,9 @@ class WorkspaceIndicator(QWidget):
         """)
 
         # Monitor and workspace label
-        initial_text = self._format_display_text(self.current_workspace, None)
+        initial_text = self._format_display_text(
+            self.current_workspace, None, self.current_workspace_layout
+        )
         self.workspace_label = QLabel(initial_text)
         self.workspace_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.workspace_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
@@ -130,7 +137,10 @@ class WorkspaceIndicator(QWidget):
         self._position_window()
 
     def _format_display_text(
-        self, workspace_index: int, workspace_name: Optional[str]
+        self,
+        workspace_index: int,
+        workspace_name: Optional[str],
+        workspace_layout: Optional[str] = None,
     ) -> str:
         """Format the display text according to the template."""
         # Convert to 1-based for display only
@@ -150,11 +160,14 @@ class WorkspaceIndicator(QWidget):
                     display_monitor = i + 1  # 1-based for display
                     break
 
+        layout_str = workspace_layout or ""
+
         return (
             self.template.format(
                 monitor=display_monitor,
                 workspace=display_workspace,
                 name=workspace_name if workspace_name else "",
+                layout=layout_str,
             )
             .strip()
             .rstrip(":")
@@ -218,7 +231,10 @@ class WorkspaceIndicator(QWidget):
         pass
 
     def update_workspace(
-        self, workspace_index: int, workspace_name: Optional[str] = None
+        self,
+        workspace_index: int,
+        workspace_name: Optional[str] = None,
+        workspace_layout: Optional[str] = None,
     ):
         """
         Update the displayed workspace information.
@@ -226,16 +242,21 @@ class WorkspaceIndicator(QWidget):
         Args:
             workspace_index: New workspace index (0-based)
             workspace_name: New workspace name (optional)
+            workspace_layout: New workspace layout (optional, e.g. VerticalStack)
         """
         if (
             workspace_index != self.current_workspace
             or workspace_name != self.current_workspace_name
+            or workspace_layout != self.current_workspace_layout
         ):
             self.current_workspace = workspace_index
             self.current_workspace_name = workspace_name
+            self.current_workspace_layout = workspace_layout
 
             # Update display text
-            display_text = self._format_display_text(workspace_index, workspace_name)
+            display_text = self._format_display_text(
+                workspace_index, workspace_name, workspace_layout
+            )
             self.workspace_label.setText(display_text)
 
             # Always use blue color
@@ -349,6 +370,7 @@ class FloatingWindowManager:
         template: str = None,
         show_monitor: bool = False,
         show_name: bool = False,
+        show_layout: bool = False,
         komorebi_client=None,
     ):
         """
@@ -359,6 +381,7 @@ class FloatingWindowManager:
             template: Custom template for workspace indicators
             show_monitor: Whether to show monitor indices
             show_name: Whether to show workspace names
+            show_layout: Whether to show workspace layout
             komorebi_client: KomorebiClient instance for workspace switching
         """
         self.monitor_manager = monitor_manager
@@ -368,6 +391,7 @@ class FloatingWindowManager:
         self.template = template
         self.show_monitor = show_monitor
         self.show_name = show_name
+        self.show_layout = show_layout
         self.komorebi_client = komorebi_client
         self.app = None
 
@@ -390,6 +414,7 @@ class FloatingWindowManager:
                 template=self.template,
                 show_monitor=self.show_monitor,
                 show_name=self.show_name,
+                show_layout=self.show_layout,
                 komorebi_client=self.komorebi_client,
                 window_manager=self,
             )
@@ -429,7 +454,9 @@ class FloatingWindowManager:
 
         if indicator:
             indicator.update_workspace(
-                workspace_state.workspace_index, workspace_state.workspace_name
+                workspace_state.workspace_index,
+                workspace_state.workspace_name,
+                workspace_state.workspace_layout,
             )
         else:
             logger.warning(f"No indicator found for monitor {monitor_id}")

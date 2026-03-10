@@ -26,11 +26,13 @@ Template Examples:
   --template "M{monitor} W{workspace}"        # Monitor and workspace
   --template "M{monitor}:W{workspace} {name}" # All info with separator
   --template "Monitor {monitor}\\nW{workspace}\\n{name}" # Multi-line
+  --template "W{workspace} {layout}"          # Workspace and layout (e.g. VerticalStack)
 
 Available placeholders:
   {monitor}   - Monitor index (1-based)
   {workspace} - Workspace number (1-based)
   {name}      - Workspace name (if available)
+  {layout}    - Current workspace layout (from state, e.g. VerticalStack)
 
 Logging Examples:
   --log-level info                           # Enable info level logging
@@ -54,7 +56,7 @@ Process Management Examples:
         type=str,
         default="{workspace}",
         help="Template string for workspace indicator display. "
-             "Use {monitor}, {workspace}, and {name} as placeholders."
+             "Use {monitor}, {workspace}, {name}, and {layout} as placeholders."
     )
     
     parser.add_argument(
@@ -67,6 +69,12 @@ Process Management Examples:
         '--show-name',
         action='store_true',
         help="Show workspace name (overrides template if not specified)"
+    )
+    
+    parser.add_argument(
+        '--show-layout',
+        action='store_true',
+        help="Show current workspace layout (e.g. VerticalStack)"
     )
     
     # Logging level arguments
@@ -132,8 +140,23 @@ Process Management Examples:
     
     return parser.parse_args()
 
+def apply_show_flags_to_template(args):
+    """When --show-* flags are used with default template, add the corresponding placeholders."""
+    if args.template != "{workspace}":
+        return
+    parts = ["{workspace}"]
+    if args.show_monitor:
+        parts.insert(0, "M{monitor}")
+    if args.show_name:
+        parts.append("{name}")
+    if args.show_layout:
+        parts.append("{layout}")
+    if len(parts) > 1:
+        args.template = " ".join(parts)
+
 if __name__ == "__main__":
     args = parse_arguments()
+    apply_show_flags_to_template(args)
     
     # Set detached flag if running in detached mode or user requested foreground
     if args.detached:
@@ -257,6 +280,8 @@ if __name__ == "__main__":
                 cmd_args.append('--show-monitor')
             if args.show_name:
                 cmd_args.append('--show-name')
+            if args.show_layout:
+                cmd_args.append('--show-layout')
             if log_level:
                 if args.debug:
                     cmd_args.append('--debug')
@@ -326,6 +351,7 @@ if __name__ == "__main__":
                 template=args.template, 
                 show_monitor=args.show_monitor, 
                 show_name=args.show_name,
+                show_layout=args.show_layout,
                 log_level=log_level
             ))
         
@@ -341,5 +367,6 @@ if __name__ == "__main__":
             template=args.template, 
             show_monitor=args.show_monitor, 
             show_name=args.show_name,
+            show_layout=args.show_layout,
             log_level=log_level
         )) 

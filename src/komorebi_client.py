@@ -388,6 +388,17 @@ class KomorebiClient:
                 monitor_id = monitor_data["id"]
                 workspaces = monitor_data.get("workspaces", {})
                 focused_workspace = workspaces.get("focused", 0)
+                workspace_elements = workspaces.get("elements", [])
+
+                # Get workspace layout for the focused workspace from state
+                workspace_layout = None
+                if focused_workspace < len(workspace_elements):
+                    layout_node = workspace_elements[focused_workspace].get("layout")
+                    if isinstance(layout_node, dict):
+                        # Prefer "Default" key (e.g. "VerticalStack"), else first value
+                        workspace_layout = layout_node.get("Default")
+                        if workspace_layout is None and layout_node:
+                            workspace_layout = next(iter(layout_node.values()), None)
 
                 # Get workspace name if available
                 workspace_names = monitor_data.get("workspace_names", {})
@@ -397,6 +408,7 @@ class KomorebiClient:
                     monitor_index=monitor_id,  # Store actual monitor ID
                     workspace_index=focused_workspace,
                     workspace_name=workspace_name,
+                    workspace_layout=workspace_layout,
                 )
                 states.append(state)
 
