@@ -65,7 +65,13 @@ class KomorebiIndicatorApp:
     """Main application class for the Komorebi Floating Workspace Indicator."""
 
     def __init__(
-        self, template: Optional[str] = None, show_monitor: bool = False, show_name: bool = False, show_layout: bool = False
+        self, 
+        template: Optional[str] = None, 
+        show_monitor: bool = False, 
+        show_name: bool = False, 
+        show_layout: bool = False,
+        opacity: Optional[float] = None,
+        poll_interval_ms: int = 1000,
     ):
         """
         Initialize the application.
@@ -75,6 +81,8 @@ class KomorebiIndicatorApp:
             show_monitor: Whether to show monitor indices
             show_name: Whether to show workspace names
             show_layout: Whether to show workspace layout
+            opacity: Window opacity (0.0 to 1.0)
+            poll_interval_ms: Polling interval in milliseconds
         """
         self.app = QApplication(sys.argv)
         self.app.setApplicationName("Komorebi Floating Workspace Indicator")
@@ -90,12 +98,13 @@ class KomorebiIndicatorApp:
             show_name=show_name,
             show_layout=show_layout,
             komorebi_client=self.komorebi_client,
+            opacity=opacity,
         )
 
         # Setup polling timer
         self.poll_timer = QTimer()
         self.poll_timer.timeout.connect(self._poll_workspace_state)
-        self.poll_interval = 1000  # 1 second
+        self.poll_interval = poll_interval_ms
 
         # State tracking - track (workspace_index, workspace_name, workspace_layout) per monitor
         self.monitor_workspace_states = {}  # monitor_id -> (workspace_index, workspace_name, workspace_layout)
@@ -318,7 +327,15 @@ class KomorebiIndicatorApp:
             self.stop()
 
 
-def main(template: Optional[str] = None, show_monitor: bool = False, show_name: bool = False, show_layout: bool = False, log_level: str = None):
+def main(
+    template: Optional[str] = None, 
+    show_monitor: bool = False, 
+    show_name: bool = False, 
+    show_layout: bool = False, 
+    log_level: str = None,
+    opacity: Optional[float] = None,
+    poll_interval_ms: int = 1000,
+):
     """
     Main entry point.
 
@@ -329,6 +346,8 @@ def main(template: Optional[str] = None, show_monitor: bool = False, show_name: 
         show_layout: Whether to show workspace layout
         log_level: Logging level ('debug', 'info', 'warning', 'error', 'critical')
                   If None, logging is effectively disabled
+        opacity: Window opacity (0.0 to 1.0)
+        poll_interval_ms: Polling interval in milliseconds
     """
     # Configure logging first
     configure_logging(log_level)
@@ -339,6 +358,8 @@ def main(template: Optional[str] = None, show_monitor: bool = False, show_name: 
             show_monitor=show_monitor,
             show_name=show_name,
             show_layout=show_layout,
+            opacity=opacity,
+            poll_interval_ms=poll_interval_ms,
         )
         return app.run()
     except Exception as e:

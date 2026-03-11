@@ -1,0 +1,36 @@
+# Komorebi Workspace Indicator Configuration
+# 
+# This is an example configuration file. Copy this to:
+# Windows: %APPDATA%\komorebi-workspace-indicator\config.toml
+# macOS: ~/Library/Application Support/komorebi-workspace-indicator/config.toml
+# Linux: ~/.config/komorebi-workspace-indicator/config.toml
+#
+# Command-line arguments override these settings.
+
+# Display template with placeholders
+# Available placeholders: {monitor}, {workspace}, {name}, {layout}
+# Examples:
+#   "{workspace}"                    - Just workspace number
+#   "M{monitor} W{workspace}"        - Monitor and workspace
+#   "W{workspace} {name}"            - Workspace and name
+#   "W{workspace} {layout}"          - Workspace and layout
+template = "{workspace}"
+
+# Show monitor index (1-based) in display
+show_monitor = false
+
+# Show workspace name in display
+show_name = false
+
+# Show workspace layout (e.g. VerticalStack) in display
+show_layout = false
+
+# Logging level: "debug", "info", "warning", "error", "critical", or null for no logging
+# log_level = "info"
+
+# Window opacity (0.0 = fully transparent, 1.0 = fully opaque)
+opacity = 0.7
+
+# Polling interval in milliseconds (how often to check for workspace changes)
+# Minimum: 100ms, Default: 1000ms (1 second)
+poll_interval_ms = 1000

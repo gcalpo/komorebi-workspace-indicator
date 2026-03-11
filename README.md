@@ -127,27 +127,81 @@ The `--template` argument allows you to customize the display format using place
 
 ## Configuration
 
+### Configuration File
+
+The application supports loading settings from a configuration file. This allows you to set default preferences without using command-line arguments every time.
+
+**Configuration File Location:**
+
+- **Windows**: `%APPDATA%\komorebi-workspace-indicator\config.toml`
+- **macOS**: `~/Library/Application Support/komorebi-workspace-indicator/config.toml`
+- **Linux**: `~/.config/komorebi-workspace-indicator/config.toml`
+
+**Using a Custom Config File:**
+
+```cmd
+py run.py --config path\to\your\config.toml
+```
+
+**Configuration Keys:**
+
+| Key                | Type   | Default         | Description                                                    |
+| ------------------ | ------ | --------------- | -------------------------------------------------------------- |
+| `template`         | string | `"{workspace}"` | Display template with placeholders: `{monitor}`, `{workspace}`, `{name}`, `{layout}` |
+| `show_monitor`     | bool   | `false`         | Show monitor index (1-based) in display                        |
+| `show_name`        | bool   | `false`         | Show workspace name in display                                 |
+| `show_layout`      | bool   | `false`         | Show workspace layout (e.g., VerticalStack) in display         |
+| `log_level`        | string | `null`          | Logging level: `"debug"`, `"info"`, `"warning"`, `"error"`, `"critical"`, or `null` for no logging |
+| `opacity`          | float  | `0.7`           | Window opacity (0.0 = fully transparent, 1.0 = fully opaque)  |
+| `poll_interval_ms` | int    | `1000`          | Polling interval in milliseconds (minimum: 100ms)              |
+
+**Example Configuration File:**
+
+See [`config.example.toml`](config.example.toml) for a complete example with all available options and comments.
+
+```toml
+# Display template
+template = "W{workspace} {name}"
+
+# Show options
+show_monitor = false
+show_name = true
+show_layout = false
+
+# Logging level (optional)
+log_level = "info"
+
+# Window opacity (0.0 to 1.0)
+opacity = 0.7
+
+# Polling interval in milliseconds
+poll_interval_ms = 1000
+```
+
+**Note**: Command-line arguments always override configuration file settings. This allows you to temporarily change settings without editing the config file.
+
 ### Display Options
 
-- **Template Customization**: Use `--template` to define custom display formats
-- **Monitor Display**: Use `--show-monitor` to include monitor indices
-- **Name Display**: Use `--show-name` to include workspace names
+- **Template Customization**: Use `--template` or the `template` config key to define custom display formats
+- **Monitor Display**: Use `--show-monitor` or `show_monitor = true` to include monitor indices
+- **Name Display**: Use `--show-name` or `show_name = true` to include workspace names
+- **Layout Display**: Use `--show-layout` or `show_layout = true` to include workspace layout
 
 ### Visual Settings
 
-The application currently uses default visual settings:
+The application uses the following default visual settings:
 
 - Blue color scheme (`#2196F3`)
 - Semi-transparent background (`rgba(0, 0, 0, 0.8)`)
 - Bold Arial font (14pt)
 - Rounded corners with padding
+- Configurable opacity (default: 0.7)
 
-Future versions will include:
+Future versions may include:
 
 - Custom indicator positioning
 - Color scheme customization
 - Indicator size adjustment
-- Opacity settings
 
 ## Troubleshooting
 
@@ -180,7 +234,7 @@ If you see "Komorebi is not running or not accessible":
 ### Performance Issues
 
 1. The application polls Komorebi every 1 second by default
-2. Adjust polling interval in `src/main.py` if needed
+2. Adjust polling interval using the `poll_interval_ms` config key or in `src/main.py` if needed
 3. Monitor resource usage in Task Manager
 
 ## Development

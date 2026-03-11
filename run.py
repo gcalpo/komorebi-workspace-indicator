@@ -77,6 +77,13 @@ Process Management Examples:
         help="Show current workspace layout (e.g. VerticalStack)"
     )
     
+    parser.add_argument(
+        '--config',
+        type=str,
+        default=None,
+        help="Path to configuration file (default: %%APPDATA%%\\komorebi-workspace-indicator\\config.toml)"
+    )
+    
     # Logging level arguments
     log_group = parser.add_mutually_exclusive_group()
     log_group.add_argument(
@@ -156,7 +163,27 @@ def apply_show_flags_to_template(args):
 
 if __name__ == "__main__":
     args = parse_arguments()
+    
+    # Load configuration file
+    from src.config import load_config, merge_cli_args
+    from pathlib import Path
+    
+    config_path = Path(args.config) if args.config else None
+    settings = load_config(config_path)
+    
+    # Merge CLI args with config (CLI takes precedence)
+    settings = merge_cli_args(settings, args)
+    
+    # Update args with merged settings for backward compatibility
+    args.template = settings.template
+    args.show_monitor = settings.show_monitor
+    args.show_name = settings.show_name
+    args.show_layout = settings.show_layout
+    
     apply_show_flags_to_template(args)
+    
+    # Update settings.template after apply_show_flags_to_template
+    settings.template = args.template
     
     # Set detached flag if running in detached mode or user requested foreground
     if args.detached:
@@ -255,14 +282,8 @@ if __name__ == "__main__":
     import subprocess
     import time
     
-    # Determine logging level
-    log_level = None  # Default to no logging
-    if args.debug:
-        log_level = 'debug'
-    elif args.verbose:
-        log_level = 'info'
-    elif args.log_level:
-        log_level = args.log_level
+    # Use log_level from settings (already merged with CLI)
+    log_level = settings.log_level
     
     # Check if we're already running as a detached process
     is_detached = getattr(sys, '_komorebi_detached', False)
@@ -273,7 +294,11 @@ if __name__ == "__main__":
             # Build command line arguments for the detached process
             cmd_args = [sys.executable, '--detached']
             
-            # Add original arguments
+            # Add config path if specified
+            if args.config:
+                cmd_args.extend(['--config', args.config])
+            
+            # Add original arguments (these will override config in the detached process)
             if args.template != "{workspace}":
                 cmd_args.extend(['--template', args.template])
             if args.show_monitor:
@@ -348,11 +373,13 @@ if __name__ == "__main__":
             # Fallback to direct execution
             from src.main import main
             sys.exit(main(
-                template=args.template, 
-                show_monitor=args.show_monitor, 
-                show_name=args.show_name,
-                show_layout=args.show_layout,
-                log_level=log_level
+                template=settings.template, 
+                show_monitor=settings.show_monitor, 
+                show_name=settings.show_name,
+                show_layout=settings.show_layout,
+                log_level=settings.log_level,
+                opacity=settings.opacity,
+                poll_interval_ms=settings.poll_interval_ms,
             ))
         
         # Exit immediately to return user to command prompt
@@ -364,9 +391,11 @@ if __name__ == "__main__":
         # We are the detached process - run the actual GUI application
         from src.main import main
         sys.exit(main(
-            template=args.template, 
-            show_monitor=args.show_monitor, 
-            show_name=args.show_name,
-            show_layout=args.show_layout,
-            log_level=log_level
+            template=settings.template, 
+            show_monitor=settings.show_monitor, 
+            show_name=settings.show_name,
+            show_layout=settings.show_layout,
+            log_level=settings.log_level,
+            opacity=settings.opacity,
+            poll_interval_ms=settings.poll_interval_ms,
         )) 

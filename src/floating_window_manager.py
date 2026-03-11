@@ -35,6 +35,7 @@ class WorkspaceIndicator(QWidget):
         show_layout: bool = False,
         komorebi_client=None,
         window_manager=None,
+        opacity: Optional[float] = None,
     ):
         """
         Initialize the workspace indicator.
@@ -53,6 +54,7 @@ class WorkspaceIndicator(QWidget):
             show_layout: Whether to show workspace layout (overrides template)
             komorebi_client: KomorebiClient instance for workspace switching
             window_manager: Reference to FloatingWindowManager for refresh operations
+            opacity: Window opacity (0.0 to 1.0), defaults to DEFAULT_OPACITY if None
         """
         super().__init__(parent)
         self.monitor_info = monitor_info
@@ -78,7 +80,7 @@ class WorkspaceIndicator(QWidget):
         
         self._setup_ui()
         self._setup_window_properties()
-        self.set_opacity(self.DEFAULT_OPACITY)
+        self.set_opacity(opacity if opacity is not None else self.DEFAULT_OPACITY)
 
     def _setup_ui(self):
         """Setup the user interface components."""
@@ -372,6 +374,7 @@ class FloatingWindowManager:
         show_name: bool = False,
         show_layout: bool = False,
         komorebi_client=None,
+        opacity: Optional[float] = None,
     ):
         """
         Initialize the floating window manager.
@@ -383,6 +386,7 @@ class FloatingWindowManager:
             show_name: Whether to show workspace names
             show_layout: Whether to show workspace layout
             komorebi_client: KomorebiClient instance for workspace switching
+            opacity: Window opacity (0.0 to 1.0), defaults to WorkspaceIndicator.DEFAULT_OPACITY if None
         """
         self.monitor_manager = monitor_manager
         self.indicators: Dict[int, WorkspaceIndicator] = (
@@ -393,6 +397,7 @@ class FloatingWindowManager:
         self.show_name = show_name
         self.show_layout = show_layout
         self.komorebi_client = komorebi_client
+        self.opacity = opacity
         self.app = None
 
         # Create indicators for all monitors
@@ -417,6 +422,7 @@ class FloatingWindowManager:
                 show_layout=self.show_layout,
                 komorebi_client=self.komorebi_client,
                 window_manager=self,
+                opacity=self.opacity,
             )
             self.indicators[monitor.id] = indicator  # Use Komorebi monitor ID as key
             logger.info(f"Created indicator for monitor {monitor.id}")
