@@ -40,6 +40,7 @@ class WorkspaceState:
     workspace_index: int
     workspace_name: Optional[str] = None
     workspace_layout: Optional[str] = None
+    workspace_layout_flip: Optional[str] = None  # Horizontal, Vertical, or HorizontalAndVertical
 
 
 class KomorebiClient:
@@ -163,6 +164,7 @@ class KomorebiClient:
                 workspace_index=workspace_index,
                 workspace_name=workspace_name,
                 workspace_layout=workspace_layout,
+                workspace_layout_flip=None,  # Not available from single-monitor query
             )
 
             # Cache the state for comparison
@@ -390,15 +392,18 @@ class KomorebiClient:
                 focused_workspace = workspaces.get("focused", 0)
                 workspace_elements = workspaces.get("elements", [])
 
-                # Get workspace layout for the focused workspace from state
+                # Get workspace layout and layout_flip for the focused workspace from state
                 workspace_layout = None
+                workspace_layout_flip = None
                 if focused_workspace < len(workspace_elements):
-                    layout_node = workspace_elements[focused_workspace].get("layout")
+                    ws_el = workspace_elements[focused_workspace]
+                    layout_node = ws_el.get("layout")
                     if isinstance(layout_node, dict):
                         # Prefer "Default" key (e.g. "VerticalStack"), else first value
                         workspace_layout = layout_node.get("Default")
                         if workspace_layout is None and layout_node:
                             workspace_layout = next(iter(layout_node.values()), None)
+                    workspace_layout_flip = ws_el.get("layout_flip")
 
                 # Get workspace name if available
                 workspace_names = monitor_data.get("workspace_names", {})
@@ -409,6 +414,7 @@ class KomorebiClient:
                     workspace_index=focused_workspace,
                     workspace_name=workspace_name,
                     workspace_layout=workspace_layout,
+                    workspace_layout_flip=workspace_layout_flip,
                 )
                 states.append(state)
 

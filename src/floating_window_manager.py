@@ -50,6 +50,7 @@ class WorkspaceIndicator(QWidget):
                      {workspace} - Workspace number (1-based for display)
                      {name} - Workspace name
                      {layout} - Current workspace layout (e.g. VerticalStack)
+                     {flip} - Layout flip: "H", "V", or "HV"
             show_monitor: Whether to show monitor index (overrides template)
             show_name: Whether to show workspace name (overrides template)
             show_layout: Whether to show workspace layout (overrides template)
@@ -63,6 +64,7 @@ class WorkspaceIndicator(QWidget):
         self.current_workspace = 0  # 0-based internally
         self.current_workspace_name = None
         self.current_workspace_layout = None
+        self.current_workspace_layout_flip = None
         self.show_layout = show_layout
         self.komorebi_client = komorebi_client
         self.window_manager = window_manager  # Store reference to window manager
@@ -109,7 +111,8 @@ class WorkspaceIndicator(QWidget):
 
         # Monitor and workspace label
         initial_text = self._format_display_text(
-            self.current_workspace, None, self.current_workspace_layout
+            self.current_workspace, None, self.current_workspace_layout,
+            self.current_workspace_layout_flip,
         )
         self.workspace_label = QLabel(initial_text)
         self.workspace_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -139,11 +142,26 @@ class WorkspaceIndicator(QWidget):
         # Position the window after sizing
         self._position_window()
 
+    @staticmethod
+    def _layout_flip_display(raw: Optional[str]) -> str:
+        """Convert layout_flip from state to display: H, V, or HV."""
+        if not raw:
+            return ""
+        r = raw.strip()
+        if r == "Horizontal":
+            return "H"
+        if r == "Vertical":
+            return "V"
+        if r == "HorizontalAndVertical":
+            return "HV"
+        return r  # fallback: show raw if unknown
+
     def _format_display_text(
         self,
         workspace_index: int,
         workspace_name: Optional[str],
         workspace_layout: Optional[str] = None,
+        workspace_layout_flip: Optional[str] = None,
     ) -> str:
         """Format the display text according to the template."""
         # Convert to 1-based for display only
@@ -164,6 +182,7 @@ class WorkspaceIndicator(QWidget):
                     break
 
         layout_str = workspace_layout or ""
+        flip_str = self._layout_flip_display(workspace_layout_flip)
 
         return (
             self.template.format(
@@ -171,6 +190,7 @@ class WorkspaceIndicator(QWidget):
                 workspace=display_workspace,
                 name=workspace_name if workspace_name else "",
                 layout=layout_str,
+                flip=flip_str,
             )
             .strip()
             .rstrip(":")
@@ -238,6 +258,7 @@ class WorkspaceIndicator(QWidget):
         workspace_index: int,
         workspace_name: Optional[str] = None,
         workspace_layout: Optional[str] = None,
+        workspace_layout_flip: Optional[str] = None,
     ):
         """
         Update the displayed workspace information.
@@ -246,19 +267,23 @@ class WorkspaceIndicator(QWidget):
             workspace_index: New workspace index (0-based)
             workspace_name: New workspace name (optional)
             workspace_layout: New workspace layout (optional, e.g. VerticalStack)
+            workspace_layout_flip: Layout flip (Horizontal, Vertical, HorizontalAndVertical)
         """
         if (
             workspace_index != self.current_workspace
             or workspace_name != self.current_workspace_name
             or workspace_layout != self.current_workspace_layout
+            or workspace_layout_flip != self.current_workspace_layout_flip
         ):
             self.current_workspace = workspace_index
             self.current_workspace_name = workspace_name
             self.current_workspace_layout = workspace_layout
+            self.current_workspace_layout_flip = workspace_layout_flip
 
             # Update display text
             display_text = self._format_display_text(
-                workspace_index, workspace_name, workspace_layout
+                workspace_index, workspace_name, workspace_layout,
+                workspace_layout_flip,
             )
             self.workspace_label.setText(display_text)
 
@@ -372,6 +397,7 @@ class WorkspaceIndicator(QWidget):
             self.current_workspace,
             self.current_workspace_name,
             self.current_workspace_layout,
+            self.current_workspace_layout_flip,
         )
 
     def _switch_to_workspace(self, workspace_index: int):
@@ -499,6 +525,7 @@ class FloatingWindowManager:
                 workspace_state.workspace_index,
                 workspace_state.workspace_name,
                 workspace_state.workspace_layout,
+                getattr(workspace_state, "workspace_layout_flip", None),
             )
         else:
             logger.warning(f"No indicator found for monitor {monitor_id}")

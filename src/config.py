@@ -8,7 +8,7 @@ Configuration File Location:
 - macOS: ~/Library/Application Support/komorebi-workspace-indicator/config.toml
 
 Configuration Keys:
-- template (str): Display template with placeholders {monitor}, {workspace}, {name}, {layout}
+- template (str): Display template with placeholders {monitor}, {workspace}, {name}, {layout}, {flip}
 - show_monitor (bool): Show monitor index in display
 - show_name (bool): Show workspace name in display
 - show_layout (bool): Show workspace layout in display

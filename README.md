@@ -26,7 +26,6 @@ A Windows-only utility that displays the current workspace information as floati
 ### Option 1: Download Pre-built Executable (Recommended)
 
 1. **Download from GitHub Releases**
-
    - Go to the [Releases page](https://github.com/yourusername/komorebi-workspace-indicator/releases)
    - Download the Windows executable: `komorebi-indicator-windows-latest.exe`
 
@@ -145,15 +144,15 @@ py run.py --config path\to\your\config.toml
 
 **Configuration Keys:**
 
-| Key                | Type   | Default         | Description                                                    |
-| ------------------ | ------ | --------------- | -------------------------------------------------------------- |
-| `template`         | string | `"{workspace}"` | Display template with placeholders: `{monitor}`, `{workspace}`, `{name}`, `{layout}` |
-| `show_monitor`     | bool   | `false`         | Show monitor index (1-based) in display                        |
-| `show_name`        | bool   | `false`         | Show workspace name in display                                 |
-| `show_layout`      | bool   | `false`         | Show workspace layout (e.g., VerticalStack) in display         |
+| Key                | Type   | Default         | Description                                                                                        |
+| ------------------ | ------ | --------------- | -------------------------------------------------------------------------------------------------- |
+| `template`         | string | `"{workspace}"` | Display template with placeholders: `{monitor}`, `{workspace}`, `{name}`, `{layout}`               |
+| `show_monitor`     | bool   | `false`         | Show monitor index (1-based) in display                                                            |
+| `show_name`        | bool   | `false`         | Show workspace name in display                                                                     |
+| `show_layout`      | bool   | `false`         | Show workspace layout (e.g., VerticalStack) in display                                             |
 | `log_level`        | string | `null`          | Logging level: `"debug"`, `"info"`, `"warning"`, `"error"`, `"critical"`, or `null` for no logging |
-| `opacity`          | float  | `0.7`           | Window opacity (0.0 = fully transparent, 1.0 = fully opaque)  |
-| `poll_interval_ms` | int    | `1000`          | Polling interval in milliseconds (minimum: 100ms)              |
+| `opacity`          | float  | `0.7`           | Window opacity (0.0 = fully transparent, 1.0 = fully opaque)                                       |
+| `poll_interval_ms` | int    | `1000`          | Polling interval in milliseconds (minimum: 100ms)                                                  |
 
 **Example Configuration File:**
 

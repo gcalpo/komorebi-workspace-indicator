@@ -106,8 +106,8 @@ class KomorebiIndicatorApp:
         self.poll_timer.timeout.connect(self._poll_workspace_state)
         self.poll_interval = poll_interval_ms
 
-        # State tracking - track (workspace_index, workspace_name, workspace_layout) per monitor
-        self.monitor_workspace_states = {}  # monitor_id -> (workspace_index, workspace_name, workspace_layout)
+        # State tracking - track (workspace_index, workspace_name, workspace_layout, workspace_layout_flip) per monitor
+        self.monitor_workspace_states = {}  # monitor_id -> (workspace_index, workspace_name, workspace_layout, workspace_layout_flip)
         self.last_update_time = {}  # monitor_id -> timestamp (for log throttling only)
         self.is_running = False
 
@@ -163,6 +163,7 @@ class KomorebiIndicatorApp:
                         state.workspace_index,
                         state.workspace_name,
                         state.workspace_layout,
+                        getattr(state, "workspace_layout_flip", None),
                     )
                     logger.info(
                         f"Initialized monitor {state.monitor_index} with workspace {state.workspace_index}"
@@ -178,6 +179,7 @@ class KomorebiIndicatorApp:
                             current_state.workspace_index,
                             getattr(current_state, "workspace_name", None),
                             getattr(current_state, "workspace_layout", None),
+                            getattr(current_state, "workspace_layout_flip", None),
                         )
                         logger.info(
                             f"Initialized monitor {monitor.id} with workspace {current_state.workspace_index}"
@@ -270,6 +272,7 @@ class KomorebiIndicatorApp:
                         current_state.workspace_index,
                         current_state.workspace_name,
                         current_state.workspace_layout,
+                        getattr(current_state, "workspace_layout_flip", None),
                     )
                     self.last_update_time[monitor_id] = current_time
 
@@ -281,30 +284,34 @@ class KomorebiIndicatorApp:
                         current_state.workspace_index,
                         current_state.workspace_name,
                         current_state.workspace_layout,
+                        getattr(current_state, "workspace_layout_flip", None),
                     )
 
         except Exception as e:
             logger.error(f"Error during workspace polling: {e}")
 
     def _has_state_changed(self, current_state: WorkspaceState) -> bool:
-        """True if any displayed property (workspace, name, layout) changed."""
+        """True if any displayed property (workspace, name, layout, layout_flip) changed."""
         monitor_id = current_state.monitor_index
         if monitor_id not in self.monitor_workspace_states:
             return True
         prev = self.monitor_workspace_states[monitor_id]
-        # Unpack: (workspace_index, workspace_name, workspace_layout) or legacy formats
+        # Unpack: (workspace_index, workspace_name, workspace_layout, workspace_layout_flip) or legacy
         if isinstance(prev, tuple):
             prev_idx = prev[0] if len(prev) > 0 else None
-            prev_name = prev[1] if len(prev) > 2 else None  # 3-tuple: name at index 1
+            prev_name = prev[1] if len(prev) > 2 else None
             prev_layout = prev[2] if len(prev) > 2 else (prev[1] if len(prev) == 2 else None)
+            prev_flip = prev[3] if len(prev) > 3 else None
             if len(prev) == 2:
                 prev_name = None  # (idx, layout) legacy
         else:
-            prev_idx, prev_name, prev_layout = prev, None, None
+            prev_idx, prev_name, prev_layout, prev_flip = prev, None, None, None
+        current_flip = getattr(current_state, "workspace_layout_flip", None)
         return (
             prev_idx != current_state.workspace_index
             or prev_name != current_state.workspace_name
             or prev_layout != current_state.workspace_layout
+            or prev_flip != current_flip
         )
 
     def run(self):

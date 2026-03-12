@@ -8,12 +8,14 @@
 # Command-line arguments override these settings.
 
 # Display template with placeholders
-# Available placeholders: {monitor}, {workspace}, {name}, {layout}
+# Available placeholders: {monitor}, {workspace}, {name}, {layout}, {flip}
+#   {flip} = layout flip: "H", "V", or "HV" (from Horizontal/Vertical/HorizontalAndVertical)
 # Examples:
 #   "{workspace}"                    - Just workspace number
 #   "M{monitor} W{workspace}"        - Monitor and workspace
 #   "W{workspace} {name}"            - Workspace and name
 #   "W{workspace} {layout}"          - Workspace and layout
+#   "W{workspace} {flip}"            - Workspace and layout flip (H/V/HV)
 template = "{workspace}"
 
 # Show monitor index (1-based) in display
