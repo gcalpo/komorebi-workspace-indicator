@@ -1,7 +1,7 @@
 # Komorebi Workspace Indicator Configuration
 # 
 # This is an example configuration file. Copy this to:
-# Windows: %APPDATA%\komorebi-workspace-indicator\config.toml
+# Windows: %USERPROFILE%\AppData\Roaming\komorebi-workspace-indicator\config.toml
 # macOS: ~/Library/Application Support/komorebi-workspace-indicator/config.toml
 # Linux: ~/.config/komorebi-workspace-indicator/config.toml
 #

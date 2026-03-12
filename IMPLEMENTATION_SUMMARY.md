@@ -73,7 +73,7 @@ Successfully implemented configuration file support for the Komorebi Workspace I
 
 ### 4. Configuration File Locations
 
-- **Windows**: `%APPDATA%\komorebi-workspace-indicator\config.toml`
+- **Windows**: `%USERPROFILE%\AppData\Roaming\komorebi-workspace-indicator\config.toml`
 - **macOS**: `~/Library/Application Support/komorebi-workspace-indicator/config.toml`
 - **Linux**: `~/.config/komorebi-workspace-indicator/config.toml`
 

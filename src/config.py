@@ -4,7 +4,7 @@ Configuration Module
 Handles loading and validation of configuration settings from TOML files.
 
 Configuration File Location:
-- Windows: %APPDATA%\komorebi-workspace-indicator\config.toml
+- Windows: AppData\Roaming\komorebi-workspace-indicator\config.toml
 - macOS: ~/Library/Application Support/komorebi-workspace-indicator/config.toml
 
 Configuration Keys:
@@ -83,9 +83,8 @@ def get_config_dir() -> Path:
         Path to the config directory
     """
     if sys.platform == "win32":
-        # Windows: %APPDATA%\komorebi-workspace-indicator
-        appdata = os.environ.get("APPDATA", ".")
-        return Path(appdata) / "komorebi-workspace-indicator"
+        # Windows: AppData\Roaming\komorebi-workspace-indicator
+        return Path.home() / "AppData" / "Roaming" / "komorebi-workspace-indicator"
     elif sys.platform == "darwin":
         # macOS: ~/Library/Application Support/komorebi-workspace-indicator
         return Path.home() / "Library" / "Application Support" / "komorebi-workspace-indicator"
@@ -117,11 +116,16 @@ def load_config(path: Optional[Path] = None) -> Settings:
     """
     if path is None:
         path = get_default_config_path()
+        logger.info(f"Checking default config location: {path}")
+    else:
+        logger.info(f"Checking config file: {path}")
     
     # If file doesn't exist, return defaults
     if not path.exists():
-        logger.debug(f"Config file not found at {path}, using defaults")
+        logger.info(f"Config file not found at {path}, using defaults")
         return Settings()
+    
+    logger.info(f"Config file found at {path}, parsing...")
     
     # Check if TOML library is available
     if tomllib is None:

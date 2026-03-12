@@ -81,7 +81,7 @@ Process Management Examples:
         '--config',
         type=str,
         default=None,
-        help="Path to configuration file (default: %%APPDATA%%\\komorebi-workspace-indicator\\config.toml)"
+        help="Path to configuration file (default: %%USERPROFILE%%\\AppData\\Roaming\\komorebi-workspace-indicator\\config.toml)"
     )
     
     # Logging level arguments
@@ -163,6 +163,13 @@ def apply_show_flags_to_template(args):
 
 if __name__ == "__main__":
     args = parse_arguments()
+    
+    # Enable logging early when user requested it, so config load messages are visible
+    if not (args.list_processes or args.stop or args.enable_autostart or args.disable_autostart):
+        if args.debug or args.verbose or args.log_level:
+            import logging
+            level = logging.DEBUG if args.debug else (logging.INFO if args.verbose else getattr(logging, (args.log_level or "INFO").upper(), logging.INFO))
+            logging.basicConfig(level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", force=True)
     
     # Load configuration file
     from src.config import load_config, merge_cli_args

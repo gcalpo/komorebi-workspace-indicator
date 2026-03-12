@@ -133,7 +133,7 @@ The application supports loading settings from a configuration file. This allows
 
 **Configuration File Location:**
 
-- **Windows**: `%APPDATA%\komorebi-workspace-indicator\config.toml`
+- **Windows**: `%USERPROFILE%\AppData\Roaming\komorebi-workspace-indicator\config.toml`
 - **macOS**: `~/Library/Application Support/komorebi-workspace-indicator/config.toml`
 - **Linux**: `~/.config/komorebi-workspace-indicator/config.toml`
 

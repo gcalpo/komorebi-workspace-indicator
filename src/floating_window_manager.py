@@ -12,6 +12,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QLabel, QMenu, QVBoxLayout, QWidget
 
+from .config import load_config
 from .komorebi_client import WorkspaceState
 from .monitor_manager import MonitorInfo
 
@@ -323,6 +324,11 @@ class WorkspaceIndicator(QWidget):
             refresh_action = menu.addAction("Refresh Monitors")
             refresh_action.triggered.connect(self._refresh_monitors)
 
+        # Add Reload config option
+        if self.window_manager:
+            reload_action = menu.addAction("Reload config")
+            reload_action.triggered.connect(self._reload_config)
+
         menu.addSeparator()
 
         # Add Quit option
@@ -337,6 +343,36 @@ class WorkspaceIndicator(QWidget):
         if self.window_manager:
             logger.info("Manual monitor refresh requested")
             self.window_manager.refresh_monitors()
+
+    def _reload_config(self):
+        """Re-read config file and reload app settings."""
+        if self.window_manager:
+            logger.info("Reload config requested")
+            self.window_manager.reload_config()
+
+    def apply_display_settings(
+        self,
+        template: str,
+        show_layout: bool,
+        opacity: float,
+    ):
+        """
+        Apply new display settings and refresh the label.
+
+        Args:
+            template: New template string
+            show_layout: New show_layout flag
+            opacity: New opacity (0.0 to 1.0)
+        """
+        self.template = template or self.DEFAULT_TEMPLATE
+        self.show_layout = show_layout
+        self.set_opacity(opacity)
+        # Refresh label with current workspace state
+        self.update_workspace(
+            self.current_workspace,
+            self.current_workspace_name,
+            self.current_workspace_layout,
+        )
 
     def _switch_to_workspace(self, workspace_index: int):
         """Switch to the specified workspace."""
@@ -489,6 +525,25 @@ class FloatingWindowManager:
         self.show_all_indicators()
 
         logger.info("Refreshed workspace indicators for new monitor configuration")
+
+    def reload_config(self):
+        """Re-read config file from default location and apply settings to all indicators."""
+        settings = load_config(None)
+        logger.info("Reloaded config from default location, applying settings")
+
+        self.template = settings.template
+        self.show_monitor = settings.show_monitor
+        self.show_name = settings.show_name
+        self.show_layout = settings.show_layout
+        self.opacity = settings.opacity
+
+        for indicator in self.indicators.values():
+            indicator.apply_display_settings(
+                self.template,
+                self.show_layout,
+                self.opacity,
+            )
+        logger.info("Applied reloaded config to all indicators")
 
     def get_indicator_count(self) -> int:
         """
